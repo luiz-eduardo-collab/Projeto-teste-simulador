@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Simulado UniFil - Analista de TIC
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="container">
+
+        <h1>
+            Simulado UniFil
+        </h1>
+
+        <p>
+            Analista de Tecnologia da Informação e Comunicação
+        </p>
+
+        <p class="subtitle">
+            Prefeitura de Ponta Grossa - PR
+        </p>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <!-- =========================
+         PAINEL DE CONFIGURAÇÃO
+    ========================== -->
+
+    <section class="painel">
+
+        <div class="filtros">
+
+            <div>
+
+                <label for="areaSelect">
+                    Área
+                </label>
+
+                <select id="areaSelect">
+
+                    <option value="Todas">
+                        Todas
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="difficultySelect">
+                    Dificuldade
+                </label>
+
+                <select id="difficultySelect">
+
+                    <option value="Todas">
+                        Todas
+                    </option>
+
+                    <option value="Fácil">
+                        Fácil
+                    </option>
+
+                    <option value="Média">
+                        Média
+                    </option>
+
+                    <option value="Difícil">
+                        Difícil
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label for="modeSelect">
+                    Modo
+                </label>
+
+                <select id="modeSelect">
+
+                    <option value="study">
+                        Estudo
+                    </option>
+
+                    <option value="simulado20">
+                        Simulado - 20 questões
+                    </option>
+
+                    <option value="simulado40">
+                        Simulado - 40 questões
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="acoes">
+
+            <button
+                id="startBtn"
+                class="btn-primary"
+            >
+                Iniciar
+            </button>
+
+
+            <button
+                id="shuffleBtn"
+                class="btn-purple"
+            >
+                Embaralhar
+            </button>
+
+
+            <button
+                id="resetBtn"
+                class="btn-danger"
+            >
+                Zerar Estatísticas
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ESTATÍSTICAS
+    ========================== -->
+
+    <section class="estatisticas">
+
+        <div class="stat">
+
+            <span>
+                Total
+            </span>
+
+            <strong id="totalQuestions">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <span>
+                Respondidas
+            </span>
+
+            <strong id="answered">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <span>
+                Acertos
+            </span>
+
+            <strong id="correct">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <span>
+                Erros
+            </span>
+
+            <strong id="wrong">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <span>
+                Aproveitamento
+            </span>
+
+            <strong id="accuracy">
+                0%
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ÁREA DO QUIZ
+    ========================== -->
+
+    <section
+        id="quiz"
+        class="quiz"
+    >
+
+        <div class="welcome">
+
+            <h2>
+                Banco de Questões
+            </h2>
+
+
+            <p>
+                Prepare-se para o cargo de
+                Analista de Tecnologia da Informação
+                e Comunicação.
+            </p>
+
+
+            <p>
+                Escolha os filtros acima ou clique
+                em "Começar Estudos".
+            </p>
+
+
+            <ul>
+
+                <li>
+                    Lógica de Programação
+                </li>
+
+                <li>
+                    Estruturas de Dados
+                </li>
+
+                <li>
+                    Programação Orientada a Objetos
+                </li>
+
+                <li>
+                    Java
+                </li>
+
+                <li>
+                    Dart e Flutter
+                </li>
+
+                <li>
+                    Banco de Dados
+                </li>
+
+                <li>
+                    SQL
+                </li>
+
+                <li>
+                    Desenvolvimento Web
+                </li>
+
+                <li>
+                    Spring
+                </li>
+
+                <li>
+                    REST e SOAP
+                </li>
+
+                <li>
+                    UML
+                </li>
+
+                <li>
+                    Arquitetura de Software
+                </li>
+
+                <li>
+                    Design Patterns
+                </li>
+
+                <li>
+                    DDD
+                </li>
+
+                <li>
+                    Scrum e XP
+                </li>
+
+                <li>
+                    Testes de Software
+                </li>
+
+                <li>
+                    Git
+                </li>
+
+                <li>
+                    Criptografia e Certificação Digital
+                </li>
+
+            </ul>
+
+
+            <button
+                id="welcomeStart"
+                class="btn-primary"
+            >
+                Começar Estudos
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <p>
+        Simulado de preparação - Analista de TIC
+    </p>
+
+</footer>
+
+
+<!--
+    PRIMEIRO CARREGA O BANCO
+    DE QUESTÕES
+-->
+
+<script src="questions.js"></script>
+
+
+<!--
+    DEPOIS CARREGA O SISTEMA
+-->
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
