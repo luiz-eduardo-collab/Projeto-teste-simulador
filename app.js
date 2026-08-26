@@ -1,26 +1,19 @@
 /* =========================================
-   VARIÁVEIS DO SISTEMA
+   SISTEMA DO SIMULADOR
 ========================================= */
 
 let currentQuestions = [];
-
 let currentIndex = 0;
-
 let selectedAnswer = null;
-
 let answeredQuestion = false;
 
 
 /* =========================================
-   ESTATÍSTICAS
+   ESTATÍSTICAS GERAIS
 ========================================= */
 
 let stats =
-    JSON.parse(
-        localStorage.getItem("stats")
-    )
-    ||
-    {
+    JSON.parse(localStorage.getItem("stats")) || {
         answered: 0,
         correct: 0,
         wrong: 0
@@ -28,25 +21,28 @@ let stats =
 
 
 /* =========================================
-   ELEMENTOS
+   RESULTADO DO SIMULADO ATUAL
+========================================= */
+
+let simulationStats = {
+    answered: 0,
+    correct: 0,
+    wrong: 0
+};
+
+
+/* =========================================
+   ELEMENTOS DO HTML
 ========================================= */
 
 const areaSelect =
-    document.getElementById(
-        "areaSelect"
-    );
-
+    document.getElementById("areaSelect");
 
 const difficultySelect =
-    document.getElementById(
-        "difficultySelect"
-    );
-
+    document.getElementById("difficultySelect");
 
 const modeSelect =
-    document.getElementById(
-        "modeSelect"
-    );
+    document.getElementById("modeSelect");
 
 
 /* =========================================
@@ -55,33 +51,25 @@ const modeSelect =
 
 function loadAreas() {
 
-    const areas =
-        [
-            ...new Set(
-                questions.map(
-                    question =>
-                        question.area
-                )
-            )
-        ];
+    const areas = [
+        ...new Set(
+            questions.map(question => question.area)
+        )
+    ];
 
+    areas.sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+    );
 
     areas.forEach(area => {
 
         const option =
-            document.createElement(
-                "option"
-            );
-
+            document.createElement("option");
 
         option.value = area;
-
         option.textContent = area;
 
-
-        areaSelect.appendChild(
-            option
-        );
+        areaSelect.appendChild(option);
 
     });
 
@@ -94,55 +82,31 @@ function loadAreas() {
 
 function updateStats() {
 
-    document
-        .getElementById(
-            "totalQuestions"
-        )
-        .textContent =
-            questions.length;
+    document.getElementById("totalQuestions")
+        .textContent = questions.length;
 
+    document.getElementById("answered")
+        .textContent = stats.answered;
 
-    document
-        .getElementById(
-            "answered"
-        )
-        .textContent =
-            stats.answered;
+    document.getElementById("correct")
+        .textContent = stats.correct;
 
-
-    document
-        .getElementById(
-            "correct"
-        )
-        .textContent =
-            stats.correct;
-
-
-    document
-        .getElementById(
-            "wrong"
-        )
-        .textContent =
-            stats.wrong;
+    document.getElementById("wrong")
+        .textContent = stats.wrong;
 
 
     const accuracy =
         stats.answered === 0
             ? 0
-            :
-            (
+            : (
                 stats.correct /
                 stats.answered *
                 100
             ).toFixed(1);
 
 
-    document
-        .getElementById(
-            "accuracy"
-        )
-        .textContent =
-            accuracy + "%";
+    document.getElementById("accuracy")
+        .textContent = accuracy + "%";
 
 
     localStorage.setItem(
@@ -167,45 +131,38 @@ function shuffle(array) {
 
         const j =
             Math.floor(
-                Math.random() *
-                (i + 1)
+                Math.random() * (i + 1)
             );
-
 
         [
             array[i],
             array[j]
-        ] =
-        [
+        ] = [
             array[j],
             array[i]
         ];
 
     }
 
-
     return array;
+
 }
 
 
 /* =========================================
-   INICIAR
+   INICIAR QUIZ
 ========================================= */
 
 function startQuiz() {
 
-    let filtered =
-        [...questions];
+    let filtered = [...questions];
 
 
-    /*
-        FILTRO POR ÁREA
-    */
+    /* =========================
+       FILTRO POR ÁREA
+    ========================= */
 
-    if (
-        areaSelect.value !==
-        "Todas"
-    ) {
+    if (areaSelect.value !== "Todas") {
 
         filtered =
             filtered.filter(
@@ -217,9 +174,9 @@ function startQuiz() {
     }
 
 
-    /*
-        FILTRO POR DIFICULDADE
-    */
+    /* =========================
+       FILTRO POR DIFICULDADE
+    ========================= */
 
     if (
         difficultySelect.value !==
@@ -236,16 +193,29 @@ function startQuiz() {
     }
 
 
-    /*
-        EMBARALHAR
-    */
+    /* =========================
+       VERIFICA QUESTÕES
+    ========================= */
+
+    if (filtered.length === 0) {
+
+        showNoQuestions();
+
+        return;
+
+    }
+
+
+    /* =========================
+       EMBARALHA
+    ========================= */
 
     shuffle(filtered);
 
 
-    /*
-        MODO SIMULADO 20
-    */
+    /* =========================
+       MODO 20
+    ========================= */
 
     if (
         modeSelect.value ===
@@ -258,9 +228,9 @@ function startQuiz() {
     }
 
 
-    /*
-        MODO SIMULADO 40
-    */
+    /* =========================
+       MODO 40
+    ========================= */
 
     if (
         modeSelect.value ===
@@ -273,14 +243,65 @@ function startQuiz() {
     }
 
 
-    currentQuestions =
-        filtered;
+    /* =========================
+       SALVA QUESTÕES ATUAIS
+    ========================= */
 
+    currentQuestions = filtered;
 
     currentIndex = 0;
 
+    selectedAnswer = null;
+
+    answeredQuestion = false;
+
+
+    /* =========================
+       ZERA RESULTADO DO SIMULADO
+    ========================= */
+
+    simulationStats = {
+        answered: 0,
+        correct: 0,
+        wrong: 0
+    };
+
 
     renderQuestion();
+
+}
+
+
+/* =========================================
+   NENHUMA QUESTÃO
+========================================= */
+
+function showNoQuestions() {
+
+    const quiz =
+        document.getElementById("quiz");
+
+    quiz.innerHTML = `
+
+        <div class="welcome">
+
+            <h2>
+                Nenhuma questão encontrada.
+            </h2>
+
+            <p>
+                Não existem questões para
+                os filtros selecionados.
+            </p>
+
+            <p>
+                Tente escolher outra área
+                ou dificuldade.
+            </p>
+
+        </div>
+
+    `;
 
 }
 
@@ -291,61 +312,29 @@ function startQuiz() {
 
 function renderQuestion() {
 
-    /*
-        Limpa resposta anterior
-    */
-
     selectedAnswer = null;
 
     answeredQuestion = false;
 
 
-    /*
-        Verifica se existem questões
-    */
-
     if (
         currentQuestions.length === 0
     ) {
 
-        document
-            .getElementById("quiz")
-            .innerHTML = `
-
-                <div class="welcome">
-
-                    <h2>
-                        Nenhuma questão encontrada.
-                    </h2>
-
-                    <p>
-                        Tente selecionar
-                        outros filtros.
-                    </p>
-
-                </div>
-
-            `;
+        showNoQuestions();
 
         return;
+
     }
 
 
     const question =
-        currentQuestions[
-            currentIndex
-        ];
+        currentQuestions[currentIndex];
 
 
     const quiz =
-        document.getElementById(
-            "quiz"
-        );
+        document.getElementById("quiz");
 
-
-    /*
-        GERA A QUESTÃO
-    */
 
     quiz.innerHTML = `
 
@@ -361,66 +350,68 @@ function renderQuestion() {
 
         <span class="area">
 
-            ${question.area}
+            ${escapeHtml(question.area)}
 
         </span>
 
 
         <span class="difficulty">
 
-            ${question.difficulty}
+            ${escapeHtml(question.difficulty)}
 
         </span>
 
 
         <div class="question">
 
-            ${question.question}
+            ${escapeHtml(question.question)}
 
         </div>
 
 
         ${
             question.code
-                ?
-                `
-                    <pre>
-${escapeHtml(question.code)}
-                    </pre>
-                `
-                :
-                ""
+                ? `
+                    <pre>${escapeHtml(question.code)}</pre>
+                  `
+                : ""
         }
 
 
         <div class="options">
 
             ${
-
-
                 question.options
                     .map(
-                        (
-                            option,
-                            index
-                        ) => `
+                        (option, index) => {
 
-                            <div
-                                class="option"
-                                data-letter="${String.fromCharCode(
+                            const letter =
+                                String.fromCharCode(
                                     65 + index
-                                )}"
-                            >
+                                );
 
-                                ${option}
+                            return `
 
-                            </div>
+                                <div
+                                    class="option"
+                                    data-letter="${letter}"
+                                >
 
-                        `
+                                    <strong>
+                                        ${letter})
+                                    </strong>
+
+                                    ${escapeHtml(
+                                        removeOptionLetter(option)
+                                    )}
+
+                                </div>
+
+                            `;
+
+                        }
                     )
                     .join("")
-
-
             }
 
         </div>
@@ -463,6 +454,7 @@ ${escapeHtml(question.code)}
 
             <button
                 id="previousBtn"
+                ${currentIndex === 0 ? "disabled" : ""}
             >
 
                 ◀ Anterior
@@ -484,23 +476,19 @@ ${escapeHtml(question.code)}
     `;
 
 
-    /*
-        CONFIGURA AS ALTERNATIVAS
-    */
+    /* =========================
+       ALTERNATIVAS
+    ========================= */
 
     document
-        .querySelectorAll(
-            ".option"
-        )
+        .querySelectorAll(".option")
         .forEach(option => {
 
             option.addEventListener(
                 "click",
                 function() {
 
-                    selectOption(
-                        this
-                    );
+                    selectOption(this);
 
                 }
             );
@@ -508,52 +496,67 @@ ${escapeHtml(question.code)}
         });
 
 
-    /*
-        BOTÃO CORRIGIR
-    */
+    /* =========================
+       CORRIGIR
+    ========================= */
 
     document
-        .getElementById(
-            "correctBtn"
-        )
+        .getElementById("correctBtn")
         .addEventListener(
             "click",
             function() {
 
-                correctQuestion(
-                    question
-                );
+                correctQuestion(question);
 
             }
         );
 
 
-    /*
-        BOTÃO PRÓXIMA
-    */
+    /* =========================
+       PRÓXIMA
+    ========================= */
 
     document
-        .getElementById(
-            "nextBtn"
-        )
+        .getElementById("nextBtn")
         .addEventListener(
             "click",
             nextQuestion
         );
 
 
-    /*
-        BOTÃO ANTERIOR
-    */
+    /* =========================
+       ANTERIOR
+    ========================= */
 
     document
-        .getElementById(
-            "previousBtn"
-        )
+        .getElementById("previousBtn")
         .addEventListener(
             "click",
             previousQuestion
         );
+
+}
+
+
+/* =========================================
+   REMOVER A), B), C), D)
+========================================= */
+
+function removeOptionLetter(option) {
+
+    if (
+        typeof option !== "string"
+    ) {
+
+        return option;
+
+    }
+
+
+    return option.replace(
+        /^\s*[A-D]\)\s*/,
+        ""
+    );
 
 }
 
@@ -564,11 +567,6 @@ ${escapeHtml(question.code)}
 
 function selectOption(element) {
 
-    /*
-        Se já corrigiu,
-        não permite alterar.
-    */
-
     if (answeredQuestion) {
 
         return;
@@ -576,14 +574,8 @@ function selectOption(element) {
     }
 
 
-    /*
-        Remove seleção anterior
-    */
-
     document
-        .querySelectorAll(
-            ".option"
-        )
+        .querySelectorAll(".option")
         .forEach(option => {
 
             option.classList.remove(
@@ -593,26 +585,12 @@ function selectOption(element) {
         });
 
 
-    /*
-        Destaca a alternativa
-    */
+    element.classList.add("selected");
 
-    element.classList.add(
-        "selected"
-    );
-
-
-    /*
-        Guarda a resposta
-    */
 
     selectedAnswer =
         element.dataset.letter;
 
-
-    /*
-        Habilita CORRIGIR
-    */
 
     const correctButton =
         document.getElementById(
@@ -622,8 +600,7 @@ function selectOption(element) {
 
     if (correctButton) {
 
-        correctButton.disabled =
-            false;
+        correctButton.disabled = false;
 
     }
 
@@ -631,16 +608,10 @@ function selectOption(element) {
 
 
 /* =========================================
-   CORRIGIR
+   CORRIGIR QUESTÃO
 ========================================= */
 
-function correctQuestion(
-    question
-) {
-
-    /*
-        Impede segunda correção
-    */
+function correctQuestion(question) {
 
     if (answeredQuestion) {
 
@@ -648,10 +619,6 @@ function correctQuestion(
 
     }
 
-
-    /*
-        Verifica seleção
-    */
 
     if (!selectedAnswer) {
 
@@ -664,16 +631,8 @@ function correctQuestion(
     }
 
 
-    /*
-        Marca como corrigida
-    */
-
     answeredQuestion = true;
 
-
-    /*
-        Pega alternativas
-    */
 
     const options =
         document.querySelectorAll(
@@ -681,20 +640,15 @@ function correctQuestion(
         );
 
 
-    /*
-        Mostra correta
-        e errada
-    */
-
     options.forEach(option => {
 
         const letter =
             option.dataset.letter;
 
 
-        /*
-            Resposta correta
-        */
+        /* =========================
+           RESPOSTA CORRETA
+        ========================= */
 
         if (
             letter ===
@@ -708,17 +662,13 @@ function correctQuestion(
         }
 
 
-        /*
-            Resposta escolhida
-            mas incorreta
-        */
+        /* =========================
+           RESPOSTA ERRADA
+        ========================= */
 
         if (
-            letter ===
-                selectedAnswer
-            &&
-            selectedAnswer !==
-                question.answer
+            letter === selectedAnswer &&
+            selectedAnswer !== question.answer
         ) {
 
             option.classList.add(
@@ -727,19 +677,30 @@ function correctQuestion(
 
         }
 
+
+        /* =========================
+           DESABILITA CLIQUE
+        ========================= */
+
+        option.style.cursor =
+            "default";
+
     });
 
 
-    /*
-        Atualiza estatísticas
-    */
+    /* =========================
+       ESTATÍSTICAS GERAIS
+    ========================= */
 
     stats.answered++;
 
 
-    /*
-        Verifica acerto
-    */
+    /* =========================
+       ESTATÍSTICAS DO SIMULADO
+    ========================= */
+
+    simulationStats.answered++;
+
 
     const feedback =
         document.getElementById(
@@ -759,12 +720,18 @@ function correctQuestion(
         );
 
 
+    /* =========================
+       ACERTO
+    ========================= */
+
     if (
         selectedAnswer ===
         question.answer
     ) {
 
         stats.correct++;
+
+        simulationStats.correct++;
 
 
         feedback.className =
@@ -776,9 +743,16 @@ function correctQuestion(
 
     }
 
+
+    /* =========================
+       ERRO
+    ========================= */
+
     else {
 
         stats.wrong++;
+
+        simulationStats.wrong++;
 
 
         feedback.className =
@@ -791,9 +765,9 @@ function correctQuestion(
     }
 
 
-    /*
-        Explicação
-    */
+    /* =========================
+       FEEDBACK
+    ========================= */
 
     feedbackText.innerHTML = `
 
@@ -801,10 +775,9 @@ function correctQuestion(
             Gabarito:
         </strong>
 
-        ${question.answer}
+        ${escapeHtml(question.answer)}
 
         <br><br>
-
 
         <strong>
             Explicação:
@@ -812,10 +785,12 @@ function correctQuestion(
 
         <br>
 
-        ${question.explanation}
+        ${escapeHtml(
+            question.explanation ||
+            "Nenhuma explicação cadastrada."
+        )}
 
         <br><br>
-
 
         <strong>
             ⚠ Pegadinha da questão:
@@ -823,36 +798,35 @@ function correctQuestion(
 
         <br>
 
-        ${question.trap}
+        ${escapeHtml(
+            question.trap ||
+            "Nenhuma pegadinha cadastrada."
+        )}
 
     `;
 
 
-    /*
-        Desabilita corrigir
-    */
+    /* =========================
+       BOTÃO CORRIGIR
+    ========================= */
 
     document
-        .getElementById(
-            "correctBtn"
-        )
+        .getElementById("correctBtn")
         .disabled = true;
 
 
-    /*
-        Libera próxima
-    */
+    /* =========================
+       PRÓXIMA
+    ========================= */
 
     document
-        .getElementById(
-            "nextBtn"
-        )
+        .getElementById("nextBtn")
         .disabled = false;
 
 
-    /*
-        Atualiza painel
-    */
+    /* =========================
+       ATUALIZA ESTATÍSTICAS
+    ========================= */
 
     updateStats();
 
@@ -865,10 +839,6 @@ function correctQuestion(
 
 function nextQuestion() {
 
-    /*
-        Não deixa avançar sem corrigir
-    */
-
     if (!answeredQuestion) {
 
         alert(
@@ -879,10 +849,6 @@ function nextQuestion() {
 
     }
 
-
-    /*
-        Ainda existem questões
-    */
 
     if (
         currentIndex <
@@ -910,15 +876,21 @@ function nextQuestion() {
 
 function previousQuestion() {
 
-    if (
-        currentIndex > 0
-    ) {
+    if (currentIndex <= 0) {
 
-        currentIndex--;
-
-        renderQuestion();
+        return;
 
     }
+
+
+    /*
+        Por enquanto voltamos para a questão
+        sem alterar as estatísticas.
+    */
+
+    currentIndex--;
+
+    renderQuestion();
 
 }
 
@@ -933,24 +905,18 @@ function showFinished() {
         currentQuestions.length;
 
 
-    /*
-        Calcula apenas o resultado
-        deste simulado
-    */
-
-    let simulationCorrect = 0;
-
-
-    /*
-        Não temos histórico individual
-        nesta versão, então mostramos
-        o painel geral.
-    */
-
     const quiz =
-        document.getElementById(
-            "quiz"
-        );
+        document.getElementById("quiz");
+
+
+    const percentage =
+        simulationStats.answered === 0
+            ? 0
+            : (
+                simulationStats.correct /
+                simulationStats.answered *
+                100
+            ).toFixed(1);
 
 
     quiz.innerHTML = `
@@ -963,57 +929,60 @@ function showFinished() {
 
 
             <p>
+
                 Você concluiu
-                ${total}
+                <strong>
+                    ${total}
+                </strong>
                 questões.
+
             </p>
 
 
             <div class="resultado-final">
 
                 <h3>
-                    Resultado geral
+                    Resultado deste simulado
                 </h3>
 
 
                 <p>
+
                     Questões respondidas:
                     <strong>
-                        ${stats.answered}
+                        ${simulationStats.answered}
                     </strong>
+
                 </p>
 
 
                 <p>
+
                     Acertos:
                     <strong>
-                        ${stats.correct}
+                        ${simulationStats.correct}
                     </strong>
+
                 </p>
 
 
                 <p>
+
                     Erros:
                     <strong>
-                        ${stats.wrong}
+                        ${simulationStats.wrong}
                     </strong>
+
                 </p>
 
 
                 <p>
+
                     Aproveitamento:
                     <strong>
-                        ${
-                            stats.answered === 0
-                                ? 0
-                                :
-                                (
-                                    stats.correct /
-                                    stats.answered *
-                                    100
-                                ).toFixed(1)
-                        }%
+                        ${percentage}%
                     </strong>
+
                 </p>
 
             </div>
@@ -1028,18 +997,47 @@ function showFinished() {
 
             </button>
 
+
+            <button
+                id="backButton"
+                class="btn-purple"
+                style="margin-left: 10px;"
+            >
+
+                Voltar ao início
+
+            </button>
+
         </div>
 
     `;
 
 
+    /* =========================
+       FAZER NOVAMENTE
+    ========================= */
+
     document
-        .getElementById(
-            "restartButton"
-        )
+        .getElementById("restartButton")
         .addEventListener(
             "click",
             startQuiz
+        );
+
+
+    /* =========================
+       VOLTAR
+    ========================= */
+
+    document
+        .getElementById("backButton")
+        .addEventListener(
+            "click",
+            function() {
+
+                location.reload();
+
+            }
         );
 
 }
@@ -1051,14 +1049,17 @@ function showFinished() {
 
 function escapeHtml(text) {
 
-    if (!text) {
+    if (
+        text === null ||
+        text === undefined
+    ) {
 
         return "";
 
     }
 
 
-    return text
+    return String(text)
 
         .replaceAll(
             "&",
@@ -1073,6 +1074,16 @@ function escapeHtml(text) {
         .replaceAll(
             ">",
             "&gt;"
+        )
+
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+
+        .replaceAll(
+            "'",
+            "&#039;"
         );
 
 }
@@ -1083,44 +1094,43 @@ function escapeHtml(text) {
 ========================================= */
 
 document
-    .getElementById(
-        "shuffleBtn"
-    )
+    .getElementById("shuffleBtn")
     .addEventListener(
         "click",
         function() {
 
-            shuffle(
-                questions
-            );
+            shuffle(questions);
 
 
             alert(
                 "Banco de questões embaralhado com sucesso!"
             );
 
+
+            updateStats();
+
         }
     );
 
 
 /* =========================================
-   INICIAR
+   BOTÃO INICIAR
 ========================================= */
 
 document
-    .getElementById(
-        "startBtn"
-    )
+    .getElementById("startBtn")
     .addEventListener(
         "click",
         startQuiz
     );
 
 
+/* =========================================
+   BOTÃO COMEÇAR ESTUDOS
+========================================= */
+
 document
-    .getElementById(
-        "welcomeStart"
-    )
+    .getElementById("welcomeStart")
     .addEventListener(
         "click",
         startQuiz
@@ -1132,9 +1142,7 @@ document
 ========================================= */
 
 document
-    .getElementById(
-        "resetBtn"
-    )
+    .getElementById("resetBtn")
     .addEventListener(
         "click",
         function() {
@@ -1145,24 +1153,26 @@ document
                 );
 
 
-            if (
-                confirmReset
-            ) {
+            if (!confirmReset) {
 
-                stats = {
-
-                    answered: 0,
-
-                    correct: 0,
-
-                    wrong: 0
-
-                };
-
-
-                updateStats();
+                return;
 
             }
+
+
+            stats = {
+                answered: 0,
+                correct: 0,
+                wrong: 0
+            };
+
+
+            updateStats();
+
+
+            alert(
+                "Estatísticas zeradas com sucesso!"
+            );
 
         }
     );
@@ -1175,3 +1185,10 @@ document
 loadAreas();
 
 updateStats();
+
+
+console.log(
+    "Simulador iniciado.",
+    "Total de questões:",
+    questions.length
+);
