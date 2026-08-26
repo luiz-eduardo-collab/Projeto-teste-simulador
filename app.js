@@ -1,494 +1,493 @@
-/* =========================================
-   SISTEMA DO SIMULADOR
-========================================= */
+/* =====================================================
+   SIMULADO UNIFIL - ANALISTA DE TIC
+   SISTEMA PRINCIPAL
+===================================================== */
 
-let currentQuestions = [];
-let currentIndex = 0;
-let selectedAnswer = null;
-let answeredQuestion = false;
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* =================================================
+       ELEMENTOS DA PÁGINA
+    ================================================= */
+
+    const areaSelect = document.getElementById("areaSelect");
+    const difficultySelect = document.getElementById("difficultySelect");
+    const modeSelect = document.getElementById("modeSelect");
+
+    const startBtn = document.getElementById("startBtn");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const welcomeStart = document.getElementById("welcomeStart");
+
+    const quiz = document.getElementById("quiz");
+
+    const totalQuestions = document.getElementById("totalQuestions");
+    const answered = document.getElementById("answered");
+    const correct = document.getElementById("correct");
+    const wrong = document.getElementById("wrong");
+    const accuracy = document.getElementById("accuracy");
 
 
-/* =========================================
-   ESTATÍSTICAS GERAIS
-========================================= */
+    /* =================================================
+       VERIFICAÇÃO DO BANCO
+    ================================================= */
 
-let stats =
-    JSON.parse(localStorage.getItem("stats")) || {
+    if (!Array.isArray(window.questions)) {
+
+        quiz.innerHTML = `
+            <div class="welcome">
+
+                <h2>Erro ao carregar questões</h2>
+
+                <p>
+                    O arquivo <strong>perguntas.js</strong>
+                    não foi carregado corretamente.
+                </p>
+
+                <p>
+                    Verifique se <strong>perguntas.js</strong>
+                    está na mesma pasta do <strong>index.html</strong>.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    /* =================================================
+       VARIÁVEIS DO SISTEMA
+    ================================================= */
+
+    let questionBank = [...questions];
+
+    let currentQuestions = [];
+
+    let currentIndex = 0;
+
+    let selectedAnswer = null;
+
+    let questionAnswered = false;
+
+    let shuffled = false;
+
+
+    /* =================================================
+       ESTATÍSTICAS
+    ================================================= */
+
+    let stats = {
         answered: 0,
         correct: 0,
         wrong: 0
     };
 
 
-/* =========================================
-   RESULTADO DO SIMULADO ATUAL
-========================================= */
+    /* =================================================
+       CRIA FILTROS DE ÁREA
+    ================================================= */
 
-let simulationStats = {
-    answered: 0,
-    correct: 0,
-    wrong: 0
-};
+    function loadAreas() {
 
-
-/* =========================================
-   ELEMENTOS DO HTML
-========================================= */
-
-const areaSelect =
-    document.getElementById("areaSelect");
-
-const difficultySelect =
-    document.getElementById("difficultySelect");
-
-const modeSelect =
-    document.getElementById("modeSelect");
-
-
-/* =========================================
-   CARREGAR ÁREAS
-========================================= */
-
-function loadAreas() {
-
-    const areas = [
-        ...new Set(
-            questions.map(question => question.area)
-        )
-    ];
-
-    areas.sort((a, b) =>
-        a.localeCompare(b, "pt-BR")
-    );
-
-    areas.forEach(area => {
-
-        const option =
-            document.createElement("option");
-
-        option.value = area;
-        option.textContent = area;
-
-        areaSelect.appendChild(option);
-
-    });
-
-}
-
-
-/* =========================================
-   ATUALIZAR ESTATÍSTICAS
-========================================= */
-
-function updateStats() {
-
-    document.getElementById("totalQuestions")
-        .textContent = questions.length;
-
-    document.getElementById("answered")
-        .textContent = stats.answered;
-
-    document.getElementById("correct")
-        .textContent = stats.correct;
-
-    document.getElementById("wrong")
-        .textContent = stats.wrong;
-
-
-    const accuracy =
-        stats.answered === 0
-            ? 0
-            : (
-                stats.correct /
-                stats.answered *
-                100
-            ).toFixed(1);
-
-
-    document.getElementById("accuracy")
-        .textContent = accuracy + "%";
-
-
-    localStorage.setItem(
-        "stats",
-        JSON.stringify(stats)
-    );
-
-}
-
-
-/* =========================================
-   EMBARALHAR
-========================================= */
-
-function shuffle(array) {
-
-    for (
-        let i = array.length - 1;
-        i > 0;
-        i--
-    ) {
-
-        const j =
-            Math.floor(
-                Math.random() * (i + 1)
-            );
-
-        [
-            array[i],
-            array[j]
-        ] = [
-            array[j],
-            array[i]
+        const areas = [
+            ...new Set(
+                questionBank.map(question => question.area)
+            )
         ];
 
-    }
+        areas.sort((a, b) => a.localeCompare(b));
 
-    return array;
+        areaSelect.innerHTML = `
+            <option value="Todas">
+                Todas
+            </option>
+        `;
 
-}
+        areas.forEach(area => {
 
+            const option = document.createElement("option");
 
-/* =========================================
-   INICIAR QUIZ
-========================================= */
+            option.value = area;
 
-function startQuiz() {
+            option.textContent = area;
 
-    let filtered = [...questions];
+            areaSelect.appendChild(option);
 
-
-    /* =========================
-       FILTRO POR ÁREA
-    ========================= */
-
-    if (areaSelect.value !== "Todas") {
-
-        filtered =
-            filtered.filter(
-                question =>
-                    question.area ===
-                    areaSelect.value
-            );
-
+        });
     }
 
 
-    /* =========================
-       FILTRO POR DIFICULDADE
-    ========================= */
+    /* =================================================
+       ATUALIZA ESTATÍSTICAS
+    ================================================= */
 
-    if (
-        difficultySelect.value !==
-        "Todas"
-    ) {
+    function updateStats() {
 
-        filtered =
-            filtered.filter(
-                question =>
-                    question.difficulty ===
-                    difficultySelect.value
-            );
+        totalQuestions.textContent =
+            currentQuestions.length;
 
+        answered.textContent =
+            stats.answered;
+
+        correct.textContent =
+            stats.correct;
+
+        wrong.textContent =
+            stats.wrong;
+
+        const percentage =
+            stats.answered > 0
+                ? Math.round(
+                    (stats.correct / stats.answered) * 100
+                )
+                : 0;
+
+        accuracy.textContent =
+            percentage + "%";
     }
 
 
-    /* =========================
-       VERIFICA QUESTÕES
-    ========================= */
+    /* =================================================
+       EMBARALHAR ARRAY
+    ================================================= */
 
-    if (filtered.length === 0) {
+    function shuffleArray(array) {
 
-        showNoQuestions();
+        const copy = [...array];
 
-        return;
+        for (
+            let i = copy.length - 1;
+            i > 0;
+            i--
+        ) {
 
+            const j =
+                Math.floor(
+                    Math.random() * (i + 1)
+                );
+
+            [
+                copy[i],
+                copy[j]
+            ] = [
+                copy[j],
+                copy[i]
+            ];
+        }
+
+        return copy;
     }
 
 
-    /* =========================
-       EMBARALHA
-    ========================= */
+    /* =================================================
+       OBTÉM QUESTÕES PELOS FILTROS
+    ================================================= */
 
-    shuffle(filtered);
+    function getFilteredQuestions() {
+
+        const selectedArea =
+            areaSelect.value;
+
+        const selectedDifficulty =
+            difficultySelect.value;
+
+        let filtered =
+            questionBank.filter(question => {
+
+                const areaOK =
+                    selectedArea === "Todas" ||
+                    question.area === selectedArea;
+
+                const difficultyOK =
+                    selectedDifficulty === "Todas" ||
+                    question.difficulty === selectedDifficulty;
+
+                return areaOK && difficultyOK;
+
+            });
 
 
-    /* =========================
-       MODO 20
-    ========================= */
+        /* =============================================
+           EMBARALHAMENTO
+        ============================================= */
 
-    if (
-        modeSelect.value ===
-        "simulado20"
-    ) {
+        if (shuffled) {
 
-        filtered =
-            filtered.slice(0, 20);
+            filtered =
+                shuffleArray(filtered);
 
+        }
+
+        return filtered;
     }
 
 
-    /* =========================
-       MODO 40
-    ========================= */
+    /* =================================================
+       INICIA SIMULADO
+    ================================================= */
 
-    if (
-        modeSelect.value ===
-        "simulado40"
-    ) {
+    function startQuiz() {
 
-        filtered =
-            filtered.slice(0, 40);
-
-    }
+        let filtered =
+            getFilteredQuestions();
 
 
-    /* =========================
-       SALVA QUESTÕES ATUAIS
-    ========================= */
+        if (filtered.length === 0) {
 
-    currentQuestions = filtered;
+            quiz.innerHTML = `
+                <div class="welcome">
 
-    currentIndex = 0;
+                    <h2>Nenhuma questão encontrada</h2>
 
-    selectedAnswer = null;
+                    <p>
+                        Não existem questões para
+                        os filtros selecionados.
+                    </p>
 
-    answeredQuestion = false;
+                    <button
+                        class="btn-primary"
+                        id="backBtn"
+                    >
+                        Voltar
+                    </button>
 
+                </div>
+            `;
 
-    /* =========================
-       ZERA RESULTADO DO SIMULADO
-    ========================= */
+            document
+                .getElementById("backBtn")
+                .addEventListener(
+                    "click",
+                    showWelcome
+                );
 
-    simulationStats = {
-        answered: 0,
-        correct: 0,
-        wrong: 0
-    };
-
-
-    renderQuestion();
-
-}
-
-
-/* =========================================
-   NENHUMA QUESTÃO
-========================================= */
-
-function showNoQuestions() {
-
-    const quiz =
-        document.getElementById("quiz");
-
-    quiz.innerHTML = `
-
-        <div class="welcome">
-
-            <h2>
-                Nenhuma questão encontrada.
-            </h2>
-
-            <p>
-                Não existem questões para
-                os filtros selecionados.
-            </p>
-
-            <p>
-                Tente escolher outra área
-                ou dificuldade.
-            </p>
-
-        </div>
-
-    `;
-
-}
-
-
-/* =========================================
-   MOSTRAR QUESTÃO
-========================================= */
-
-function renderQuestion() {
-
-    selectedAnswer = null;
-
-    answeredQuestion = false;
-
-
-    if (
-        currentQuestions.length === 0
-    ) {
-
-        showNoQuestions();
-
-        return;
-
-    }
-
-
-    const question =
-        currentQuestions[currentIndex];
-
-
-    const quiz =
-        document.getElementById("quiz");
-
-
-    quiz.innerHTML = `
-
-        <div class="progress">
-
-            Questão
-            ${currentIndex + 1}
-            de
-            ${currentQuestions.length}
-
-        </div>
-
-
-        <span class="area">
-
-            ${escapeHtml(question.area)}
-
-        </span>
-
-
-        <span class="difficulty">
-
-            ${escapeHtml(question.difficulty)}
-
-        </span>
-
-
-        <div class="question">
-
-            ${escapeHtml(question.question)}
-
-        </div>
-
-
-        ${
-            question.code
-                ? `
-                    <pre>${escapeHtml(question.code)}</pre>
-                  `
-                : ""
+            return;
         }
 
 
-        <div class="options">
+        /* =============================================
+           MODO DE PROVA
+        ============================================= */
+
+        const mode =
+            modeSelect.value;
+
+        if (mode === "simulado20") {
+
+            filtered =
+                filtered.slice(0, 20);
+
+        }
+
+        if (mode === "simulado40") {
+
+            filtered =
+                filtered.slice(0, 40);
+
+        }
+
+
+        currentQuestions =
+            filtered;
+
+        currentIndex = 0;
+
+        selectedAnswer = null;
+
+        questionAnswered = false;
+
+
+        stats = {
+            answered: 0,
+            correct: 0,
+            wrong: 0
+        };
+
+
+        updateStats();
+
+        renderQuestion();
+    }
+
+
+    /* =================================================
+       MOSTRA QUESTÃO
+    ================================================= */
+
+    function renderQuestion() {
+
+        if (
+            currentIndex >=
+            currentQuestions.length
+        ) {
+
+            showResult();
+
+            return;
+        }
+
+
+        const question =
+            currentQuestions[currentIndex];
+
+
+        selectedAnswer = null;
+
+        questionAnswered = false;
+
+
+        quiz.innerHTML = `
+
+            <div class="progress">
+
+                Questão
+                ${currentIndex + 1}
+                de
+                ${currentQuestions.length}
+
+            </div>
+
+
+            <div>
+
+                <span class="area">
+
+                    ${escapeHTML(question.area)}
+
+                </span>
+
+
+                <span class="difficulty">
+
+                    ${escapeHTML(question.difficulty)}
+
+                </span>
+
+            </div>
+
+
+            <div class="question">
+
+                ${escapeHTML(question.question)}
+
+            </div>
+
 
             ${
-                question.options
-                    .map(
-                        (option, index) => {
-
-                            const letter =
-                                String.fromCharCode(
-                                    65 + index
-                                );
-
-                            return `
-
-                                <div
-                                    class="option"
-                                    data-letter="${letter}"
-                                >
-
-                                    <strong>
-                                        ${letter})
-                                    </strong>
-
-                                    ${escapeHtml(
-                                        removeOptionLetter(option)
-                                    )}
-
-                                </div>
-
-                            `;
-
-                        }
-                    )
-                    .join("")
+                question.code
+                    ? `
+                        <pre><code>${escapeHTML(
+                            question.code
+                        )}</code></pre>
+                      `
+                    : ""
             }
 
-        </div>
+
+            <div class="options">
+
+                ${question.options
+                    .map((option, index) => {
+
+                        return `
+
+                            <div
+                                class="option"
+                                data-index="${index}"
+                            >
+                                ${escapeHTML(option)}
+                            </div>
+
+                        `;
+
+                    })
+                    .join("")
+                }
+
+            </div>
 
 
-        <div class="correction-area">
+            <div class="correction-area">
 
-            <button
-                id="correctBtn"
-                class="correct-btn"
-                disabled
-            >
+                <button
+                    id="correctBtn"
+                    class="correct-btn"
+                    disabled
+                >
+                    Corrigir resposta
+                </button>
 
-                ✓ Corrigir questão
-
-            </button>
-
-        </div>
-
-
-        <div
-            id="feedback"
-            class="feedback"
-        >
-
-            <h3
-                id="feedbackTitle"
-            ></h3>
+            </div>
 
 
             <div
-                id="feedbackText"
-                class="explanation"
+                id="feedback"
+                class="feedback"
             ></div>
 
-        </div>
+
+            <div class="navigation">
+
+                <button
+                    id="prevBtn"
+                    ${currentIndex === 0 ? "disabled" : ""}
+                >
+                    ← Anterior
+                </button>
 
 
-        <div class="navigation">
+                <button
+                    id="nextBtn"
+                    disabled
+                >
+                    ${
+                        currentIndex ===
+                        currentQuestions.length - 1
+                            ? "Finalizar"
+                            : "Próxima →"
+                    }
+                </button>
 
-            <button
-                id="previousBtn"
-                ${currentIndex === 0 ? "disabled" : ""}
-            >
+            </div>
 
-                ◀ Anterior
-
-            </button>
-
-
-            <button
-                id="nextBtn"
-                disabled
-            >
-
-                Próxima ▶
-
-            </button>
-
-        </div>
-
-    `;
+        `;
 
 
-    /* =========================
-       ALTERNATIVAS
-    ========================= */
+        /* =============================================
+           EVENTOS DAS ALTERNATIVAS
+        ============================================= */
 
-    document
-        .querySelectorAll(".option")
-        .forEach(option => {
+        const options =
+            quiz.querySelectorAll(".option");
+
+        options.forEach(option => {
 
             option.addEventListener(
                 "click",
-                function() {
+                function () {
 
-                    selectOption(this);
+                    if (questionAnswered) {
+                        return;
+                    }
+
+                    options.forEach(item => {
+                        item.classList.remove(
+                            "selected"
+                        );
+                    });
+
+                    this.classList.add(
+                        "selected"
+                    );
+
+                    selectedAnswer =
+                        Number(
+                            this.dataset.index
+                        );
+
+                    document
+                        .getElementById("correctBtn")
+                        .disabled = false;
 
                 }
             );
@@ -496,669 +495,574 @@ function renderQuestion() {
         });
 
 
-    /* =========================
-       CORRIGIR
-    ========================= */
+        /* =============================================
+           CORRIGIR
+        ============================================= */
 
-    document
-        .getElementById("correctBtn")
-        .addEventListener(
-            "click",
-            function() {
+        document
+            .getElementById("correctBtn")
+            .addEventListener(
+                "click",
+                correctQuestion
+            );
 
-                correctQuestion(question);
+
+        /* =============================================
+           ANTERIOR
+        ============================================= */
+
+        document
+            .getElementById("prevBtn")
+            .addEventListener(
+                "click",
+                function () {
+
+                    if (currentIndex > 0) {
+
+                        currentIndex--;
+
+                        renderQuestion();
+
+                    }
+
+                }
+            );
+
+
+        /* =============================================
+           PRÓXIMA
+        ============================================= */
+
+        document
+            .getElementById("nextBtn")
+            .addEventListener(
+                "click",
+                function () {
+
+                    if (!questionAnswered) {
+                        return;
+                    }
+
+                    currentIndex++;
+
+                    renderQuestion();
+
+                }
+            );
+
+    }
+
+
+    /* =================================================
+       CORRIGE QUESTÃO
+    ================================================= */
+
+    function correctQuestion() {
+
+        if (
+            selectedAnswer === null ||
+            questionAnswered
+        ) {
+            return;
+        }
+
+
+        const question =
+            currentQuestions[currentIndex];
+
+
+        const selectedOption =
+            question.options[selectedAnswer];
+
+
+        const correctLetter =
+            question.answer.trim().toUpperCase();
+
+
+        const selectedLetter =
+            selectedOption
+                .trim()
+                .charAt(0)
+                .toUpperCase();
+
+
+        const isCorrect =
+            selectedLetter === correctLetter;
+
+
+        questionAnswered = true;
+
+
+        stats.answered++;
+
+
+        if (isCorrect) {
+
+            stats.correct++;
+
+        } else {
+
+            stats.wrong++;
+
+        }
+
+
+        updateStats();
+
+
+        /* =============================================
+           MARCA ALTERNATIVAS
+        ============================================= */
+
+        const options =
+            quiz.querySelectorAll(".option");
+
+
+        options.forEach(
+            (option, index) => {
+
+                const optionLetter =
+                    question.options[index]
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase();
+
+
+                if (
+                    optionLetter ===
+                    correctLetter
+                ) {
+
+                    option.classList.add(
+                        "correct"
+                    );
+
+                }
+
+
+                if (
+                    index === selectedAnswer &&
+                    !isCorrect
+                ) {
+
+                    option.classList.add(
+                        "wrong"
+                    );
+
+                }
+
+
+                option.style.cursor =
+                    "default";
 
             }
         );
 
 
-    /* =========================
-       PRÓXIMA
-    ========================= */
+        /* =============================================
+           FEEDBACK
+        ============================================= */
 
-    document
-        .getElementById("nextBtn")
-        .addEventListener(
-            "click",
-            nextQuestion
-        );
-
-
-    /* =========================
-       ANTERIOR
-    ========================= */
-
-    document
-        .getElementById("previousBtn")
-        .addEventListener(
-            "click",
-            previousQuestion
-        );
-
-}
-
-
-/* =========================================
-   REMOVER A), B), C), D)
-========================================= */
-
-function removeOptionLetter(option) {
-
-    if (
-        typeof option !== "string"
-    ) {
-
-        return option;
-
-    }
-
-
-    return option.replace(
-        /^\s*[A-D]\)\s*/,
-        ""
-    );
-
-}
-
-
-/* =========================================
-   SELECIONAR ALTERNATIVA
-========================================= */
-
-function selectOption(element) {
-
-    if (answeredQuestion) {
-
-        return;
-
-    }
-
-
-    document
-        .querySelectorAll(".option")
-        .forEach(option => {
-
-            option.classList.remove(
-                "selected"
+        const feedback =
+            document.getElementById(
+                "feedback"
             );
 
-        });
+
+        if (isCorrect) {
+
+            feedback.className =
+                "feedback ok";
+
+            feedback.innerHTML = `
+
+                <h3>✓ Resposta correta!</h3>
+
+                <p class="explanation">
+
+                    <strong>Explicação:</strong><br>
+
+                    ${escapeHTML(
+                        question.explanation
+                    )}
+
+                </p>
+
+                ${
+                    question.trap
+                        ? `
+                            <p class="explanation">
+
+                                <strong>⚠ Pegadinha:</strong><br>
+
+                                ${escapeHTML(
+                                    question.trap
+                                )}
+
+                            </p>
+                          `
+                        : ""
+                }
+
+            `;
+
+        } else {
+
+            feedback.className =
+                "feedback error";
+
+            feedback.innerHTML = `
+
+                <h3>✗ Resposta incorreta</h3>
+
+                <p class="explanation">
+
+                    <strong>Resposta correta:</strong>
+                    ${escapeHTML(
+                        question.answer
+                    )}
+
+                </p>
 
 
-    element.classList.add("selected");
+                <p class="explanation">
 
+                    <strong>Explicação:</strong><br>
 
-    selectedAnswer =
-        element.dataset.letter;
+                    ${escapeHTML(
+                        question.explanation
+                    )}
 
+                </p>
 
-    const correctButton =
-        document.getElementById(
-            "correctBtn"
-        );
+                ${
+                    question.trap
+                        ? `
+                            <p class="explanation">
 
+                                <strong>⚠ Pegadinha:</strong><br>
 
-    if (correctButton) {
+                                ${escapeHTML(
+                                    question.trap
+                                )}
 
-        correctButton.disabled = false;
+                            </p>
+                          `
+                        : ""
+                }
 
-    }
-
-}
-
-
-/* =========================================
-   CORRIGIR QUESTÃO
-========================================= */
-
-function correctQuestion(question) {
-
-    if (answeredQuestion) {
-
-        return;
-
-    }
-
-
-    if (!selectedAnswer) {
-
-        alert(
-            "Selecione uma alternativa antes de corrigir."
-        );
-
-        return;
-
-    }
-
-
-    answeredQuestion = true;
-
-
-    const options =
-        document.querySelectorAll(
-            ".option"
-        );
-
-
-    options.forEach(option => {
-
-        const letter =
-            option.dataset.letter;
-
-
-        /* =========================
-           RESPOSTA CORRETA
-        ========================= */
-
-        if (
-            letter ===
-            question.answer
-        ) {
-
-            option.classList.add(
-                "correct"
-            );
+            `;
 
         }
 
 
-        /* =========================
-           RESPOSTA ERRADA
-        ========================= */
+        /* =============================================
+           HABILITA PRÓXIMA
+        ============================================= */
 
-        if (
-            letter === selectedAnswer &&
-            selectedAnswer !== question.answer
-        ) {
+        document
+            .getElementById("correctBtn")
+            .disabled = true;
 
-            option.classList.add(
-                "wrong"
-            );
+
+        document
+            .getElementById("nextBtn")
+            .disabled = false;
+
+    }
+
+
+    /* =================================================
+       RESULTADO FINAL
+    ================================================= */
+
+    function showResult() {
+
+        const percentage =
+            stats.answered > 0
+                ? Math.round(
+                    (stats.correct /
+                        stats.answered) * 100
+                )
+                : 0;
+
+
+        let message = "";
+
+
+        if (percentage >= 90) {
+
+            message =
+                "Excelente desempenho!";
+
+        } else if (percentage >= 70) {
+
+            message =
+                "Bom desempenho! Continue estudando.";
+
+        } else if (percentage >= 50) {
+
+            message =
+                "Desempenho intermediário. Revise os assuntos.";
+
+        } else {
+
+            message =
+                "É hora de reforçar os estudos.";
 
         }
 
 
-        /* =========================
-           DESABILITA CLIQUE
-        ========================= */
+        quiz.innerHTML = `
 
-        option.style.cursor =
-            "default";
+            <div class="welcome">
 
-    });
-
-
-    /* =========================
-       ESTATÍSTICAS GERAIS
-    ========================= */
-
-    stats.answered++;
-
-
-    /* =========================
-       ESTATÍSTICAS DO SIMULADO
-    ========================= */
-
-    simulationStats.answered++;
-
-
-    const feedback =
-        document.getElementById(
-            "feedback"
-        );
-
-
-    const feedbackTitle =
-        document.getElementById(
-            "feedbackTitle"
-        );
-
-
-    const feedbackText =
-        document.getElementById(
-            "feedbackText"
-        );
-
-
-    /* =========================
-       ACERTO
-    ========================= */
-
-    if (
-        selectedAnswer ===
-        question.answer
-    ) {
-
-        stats.correct++;
-
-        simulationStats.correct++;
-
-
-        feedback.className =
-            "feedback ok";
-
-
-        feedbackTitle.textContent =
-            "✓ Resposta correta!";
-
-    }
-
-
-    /* =========================
-       ERRO
-    ========================= */
-
-    else {
-
-        stats.wrong++;
-
-        simulationStats.wrong++;
-
-
-        feedback.className =
-            "feedback error";
-
-
-        feedbackTitle.textContent =
-            "✗ Resposta incorreta";
-
-    }
-
-
-    /* =========================
-       FEEDBACK
-    ========================= */
-
-    feedbackText.innerHTML = `
-
-        <strong>
-            Gabarito:
-        </strong>
-
-        ${escapeHtml(question.answer)}
-
-        <br><br>
-
-        <strong>
-            Explicação:
-        </strong>
-
-        <br>
-
-        ${escapeHtml(
-            question.explanation ||
-            "Nenhuma explicação cadastrada."
-        )}
-
-        <br><br>
-
-        <strong>
-            ⚠ Pegadinha da questão:
-        </strong>
-
-        <br>
-
-        ${escapeHtml(
-            question.trap ||
-            "Nenhuma pegadinha cadastrada."
-        )}
-
-    `;
-
-
-    /* =========================
-       BOTÃO CORRIGIR
-    ========================= */
-
-    document
-        .getElementById("correctBtn")
-        .disabled = true;
-
-
-    /* =========================
-       PRÓXIMA
-    ========================= */
-
-    document
-        .getElementById("nextBtn")
-        .disabled = false;
-
-
-    /* =========================
-       ATUALIZA ESTATÍSTICAS
-    ========================= */
-
-    updateStats();
-
-}
-
-
-/* =========================================
-   PRÓXIMA QUESTÃO
-========================================= */
-
-function nextQuestion() {
-
-    if (!answeredQuestion) {
-
-        alert(
-            "Selecione uma alternativa e clique em 'Corrigir questão' antes de continuar."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        currentIndex <
-        currentQuestions.length - 1
-    ) {
-
-        currentIndex++;
-
-        renderQuestion();
-
-    }
-
-    else {
-
-        showFinished();
-
-    }
-
-}
-
-
-/* =========================================
-   QUESTÃO ANTERIOR
-========================================= */
-
-function previousQuestion() {
-
-    if (currentIndex <= 0) {
-
-        return;
-
-    }
-
-
-    /*
-        Por enquanto voltamos para a questão
-        sem alterar as estatísticas.
-    */
-
-    currentIndex--;
-
-    renderQuestion();
-
-}
-
-
-/* =========================================
-   FINAL DO SIMULADO
-========================================= */
-
-function showFinished() {
-
-    const total =
-        currentQuestions.length;
-
-
-    const quiz =
-        document.getElementById("quiz");
-
-
-    const percentage =
-        simulationStats.answered === 0
-            ? 0
-            : (
-                simulationStats.correct /
-                simulationStats.answered *
-                100
-            ).toFixed(1);
-
-
-    quiz.innerHTML = `
-
-        <div class="welcome">
-
-            <h2>
-                🎯 Simulado concluído!
-            </h2>
-
-
-            <p>
-
-                Você concluiu
-                <strong>
-                    ${total}
-                </strong>
-                questões.
-
-            </p>
-
-
-            <div class="resultado-final">
-
-                <h3>
-                    Resultado deste simulado
-                </h3>
+                <h2>
+                    Simulado finalizado!
+                </h2>
 
 
                 <p>
-
-                    Questões respondidas:
-                    <strong>
-                        ${simulationStats.answered}
-                    </strong>
-
+                    ${message}
                 </p>
 
 
-                <p>
+                <div class="resultado-final">
 
-                    Acertos:
-                    <strong>
-                        ${simulationStats.correct}
-                    </strong>
+                    <p>
+                        <strong>
+                            Questões:
+                        </strong>
 
-                </p>
-
-
-                <p>
-
-                    Erros:
-                    <strong>
-                        ${simulationStats.wrong}
-                    </strong>
-
-                </p>
+                        ${currentQuestions.length}
+                    </p>
 
 
-                <p>
+                    <p>
+                        <strong>
+                            Respondidas:
+                        </strong>
 
-                    Aproveitamento:
-                    <strong>
+                        ${stats.answered}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Acertos:
+                        </strong>
+
+                        ${stats.correct}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Erros:
+                        </strong>
+
+                        ${stats.wrong}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Aproveitamento:
+                        </strong>
+
                         ${percentage}%
-                    </strong>
+                    </p>
 
-                </p>
+                </div>
+
+
+                <button
+                    id="restartBtn"
+                    class="btn-primary"
+                >
+                    Fazer novamente
+                </button>
 
             </div>
 
-
-            <button
-                id="restartButton"
-                class="btn-primary"
-            >
-
-                Fazer novamente
-
-            </button>
+        `;
 
 
-            <button
-                id="backButton"
-                class="btn-purple"
-                style="margin-left: 10px;"
-            >
-
-                Voltar ao início
-
-            </button>
-
-        </div>
-
-    `;
-
-
-    /* =========================
-       FAZER NOVAMENTE
-    ========================= */
-
-    document
-        .getElementById("restartButton")
-        .addEventListener(
-            "click",
-            startQuiz
-        );
-
-
-    /* =========================
-       VOLTAR
-    ========================= */
-
-    document
-        .getElementById("backButton")
-        .addEventListener(
-            "click",
-            function() {
-
-                location.reload();
-
-            }
-        );
-
-}
-
-
-/* =========================================
-   ESCAPAR HTML
-========================================= */
-
-function escapeHtml(text) {
-
-    if (
-        text === null ||
-        text === undefined
-    ) {
-
-        return "";
+        document
+            .getElementById("restartBtn")
+            .addEventListener(
+                "click",
+                startQuiz
+            );
 
     }
 
 
-    return String(text)
+    /* =================================================
+       TELA INICIAL
+    ================================================= */
 
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
+    function showWelcome() {
 
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
+        quiz.innerHTML = `
 
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
+            <div class="welcome">
 
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
-}
+                <h2>
+                    Banco de Questões
+                </h2>
 
 
-/* =========================================
-   EMBARALHAR BANCO
-========================================= */
-
-document
-    .getElementById("shuffleBtn")
-    .addEventListener(
-        "click",
-        function() {
-
-            shuffle(questions);
+                <p>
+                    Prepare-se para o cargo de
+                    Analista de Tecnologia da Informação
+                    e Comunicação.
+                </p>
 
 
-            alert(
-                "Banco de questões embaralhado com sucesso!"
+                <p>
+                    Escolha os filtros acima ou clique
+                    em "Começar Estudos".
+                </p>
+
+
+                <ul>
+
+                    <li>Lógica de Programação</li>
+
+                    <li>Estruturas de Dados</li>
+
+                    <li>
+                        Programação Orientada a Objetos
+                    </li>
+
+                    <li>Java</li>
+
+                    <li>Dart e Flutter</li>
+
+                    <li>Banco de Dados</li>
+
+                    <li>SQL</li>
+
+                    <li>Desenvolvimento Web</li>
+
+                    <li>Spring</li>
+
+                    <li>REST e SOAP</li>
+
+                    <li>UML</li>
+
+                    <li>Arquitetura de Software</li>
+
+                    <li>Design Patterns</li>
+
+                    <li>DDD</li>
+
+                    <li>Scrum e XP</li>
+
+                    <li>Testes de Software</li>
+
+                    <li>Git</li>
+
+                    <li>
+                        Criptografia e
+                        Certificação Digital
+                    </li>
+
+                </ul>
+
+
+                <button
+                    id="welcomeStart"
+                    class="btn-primary"
+                >
+                    Começar Estudos
+                </button>
+
+            </div>
+
+        `;
+
+
+        document
+            .getElementById("welcomeStart")
+            .addEventListener(
+                "click",
+                startQuiz
             );
 
+    }
 
-            updateStats();
+
+    /* =================================================
+       ESCAPAR HTML
+       
+       Evita que códigos das questões
+       sejam interpretados como HTML.
+    ================================================= */
+
+    function escapeHTML(value) {
+
+        if (value === null ||
+            value === undefined) {
+
+            return "";
+
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    /* =================================================
+       EMBARALHAR
+    ================================================= */
+
+    shuffleBtn.addEventListener(
+        "click",
+        function () {
+
+            shuffled = true;
+
+            startQuiz();
 
         }
     );
 
 
-/* =========================================
-   BOTÃO INICIAR
-========================================= */
+    /* =================================================
+       INICIAR
+    ================================================= */
 
-document
-    .getElementById("startBtn")
-    .addEventListener(
+    startBtn.addEventListener(
         "click",
         startQuiz
     );
 
 
-/* =========================================
-   BOTÃO COMEÇAR ESTUDOS
-========================================= */
+    /* =================================================
+       BOTÃO DA TELA INICIAL
+    ================================================= */
 
-document
-    .getElementById("welcomeStart")
-    .addEventListener(
+    welcomeStart.addEventListener(
         "click",
         startQuiz
     );
 
 
-/* =========================================
-   ZERAR ESTATÍSTICAS
-========================================= */
+    /* =================================================
+       ZERAR ESTATÍSTICAS
+    ================================================= */
 
-document
-    .getElementById("resetBtn")
-    .addEventListener(
+    resetBtn.addEventListener(
         "click",
-        function() {
-
-            const confirmReset =
-                confirm(
-                    "Deseja realmente zerar todas as estatísticas?"
-                );
-
-
-            if (!confirmReset) {
-
-                return;
-
-            }
-
+        function () {
 
             stats = {
                 answered: 0,
@@ -1166,9 +1070,7 @@ document
                 wrong: 0
             };
 
-
             updateStats();
-
 
             alert(
                 "Estatísticas zeradas com sucesso!"
@@ -1178,17 +1080,77 @@ document
     );
 
 
-/* =========================================
-   INICIALIZAÇÃO
-========================================= */
+    /* =================================================
+       FILTROS ALTERADOS
+    ================================================= */
 
-loadAreas();
+    areaSelect.addEventListener(
+        "change",
+        function () {
 
-updateStats();
+            if (currentQuestions.length === 0) {
+
+                updateStats();
+
+            }
+
+        }
+    );
 
 
-console.log(
-    "Simulador iniciado.",
-    "Total de questões:",
-    questions.length
-);
+    difficultySelect.addEventListener(
+        "change",
+        function () {
+
+            if (currentQuestions.length === 0) {
+
+                updateStats();
+
+            }
+
+        }
+    );
+
+
+    modeSelect.addEventListener(
+        "change",
+        function () {
+
+            if (currentQuestions.length === 0) {
+
+                updateStats();
+
+            }
+
+        }
+    );
+
+
+    /* =================================================
+       INICIALIZAÇÃO
+    ================================================= */
+
+    loadAreas();
+
+
+    /*
+       Mostra a quantidade total do banco
+       inicialmente.
+    */
+
+    totalQuestions.textContent =
+        questionBank.length;
+
+    answered.textContent = "0";
+    correct.textContent = "0";
+    wrong.textContent = "0";
+    accuracy.textContent = "0%";
+
+
+    console.log(
+        "Simulado carregado:",
+        questionBank.length,
+        "questões."
+    );
+
+});
