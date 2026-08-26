@@ -14,9 +14,10 @@
         Simulado UniFil - Analista de TIC
     </title>
 
+    <!-- O arquivo está na raiz do GitHub -->
     <link
         rel="stylesheet"
-        href="style.css"
+        href="estilo.css"
     >
 
 </head>
@@ -359,17 +360,21 @@
 </footer>
 
 
-<!--
-    PRIMEIRO CARREGA O BANCO
-    DE QUESTÕES
--->
+<!-- =====================================================
+     BANCO DE QUESTÕES
+     
+     IMPORTANTE:
+     O arquivo está na raiz do GitHub.
+     Ele precisa carregar ANTES do app.js,
+     pois cria a variável "questions".
+===================================================== -->
 
-<script src="questions.js"></script>
+<script src="perguntas.js"></script>
 
 
-<!--
-    DEPOIS CARREGA O SISTEMA
--->
+<!-- =====================================================
+     SISTEMA DO SIMULADO
+===================================================== -->
 
 <script src="app.js"></script>
 
