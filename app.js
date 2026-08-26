@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const startBtn = document.getElementById("startBtn");
     const shuffleBtn = document.getElementById("shuffleBtn");
     const resetBtn = document.getElementById("resetBtn");
-    const welcomeStart = document.getElementById("welcomeStart");
 
     const quiz = document.getElementById("quiz");
 
@@ -29,9 +28,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /* =================================================
        VERIFICAÇÃO DO BANCO
+
+       IMPORTANTE:
+       perguntas.js usa:
+           const questions = [];
+
+       Por isso NÃO usamos window.questions.
     ================================================= */
 
-    if (!Array.isArray(window.questions)) {
+    if (!Array.isArray(questions)) {
 
         quiz.innerHTML = `
             <div class="welcome">
@@ -39,13 +44,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 <h2>Erro ao carregar questões</h2>
 
                 <p>
-                    O arquivo <strong>perguntas.js</strong>
-                    não foi carregado corretamente.
+                    O banco de questões não foi carregado.
                 </p>
 
                 <p>
-                    Verifique se <strong>perguntas.js</strong>
-                    está na mesma pasta do <strong>index.html</strong>.
+                    Verifique se o arquivo
+                    <strong>perguntas.js</strong>
+                    está na mesma pasta do index.html.
                 </p>
 
             </div>
@@ -56,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       VARIÁVEIS DO SISTEMA
+       BANCO
     ================================================= */
 
     let questionBank = [...questions];
@@ -84,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       CRIA FILTROS DE ÁREA
+       CARREGAR ÁREAS
     ================================================= */
 
     function loadAreas() {
@@ -95,7 +100,9 @@ document.addEventListener("DOMContentLoaded", function () {
             )
         ];
 
-        areas.sort((a, b) => a.localeCompare(b));
+        areas.sort((a, b) =>
+            a.localeCompare(b, "pt-BR")
+        );
 
         areaSelect.innerHTML = `
             <option value="Todas">
@@ -105,7 +112,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         areas.forEach(area => {
 
-            const option = document.createElement("option");
+            const option =
+                document.createElement("option");
 
             option.value = area;
 
@@ -118,13 +126,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       ATUALIZA ESTATÍSTICAS
+       ESTATÍSTICAS
     ================================================= */
 
     function updateStats() {
 
         totalQuestions.textContent =
-            currentQuestions.length;
+            currentQuestions.length > 0
+                ? currentQuestions.length
+                : questionBank.length;
 
         answered.textContent =
             stats.answered;
@@ -138,7 +148,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const percentage =
             stats.answered > 0
                 ? Math.round(
-                    (stats.correct / stats.answered) * 100
+                    (stats.correct /
+                        stats.answered) * 100
                 )
                 : 0;
 
@@ -148,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       EMBARALHAR ARRAY
+       EMBARALHAR
     ================================================= */
 
     function shuffleArray(array) {
@@ -180,7 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       OBTÉM QUESTÕES PELOS FILTROS
+       FILTROS
     ================================================= */
 
     function getFilteredQuestions() {
@@ -190,6 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const selectedDifficulty =
             difficultySelect.value;
+
 
         let filtered =
             questionBank.filter(question => {
@@ -207,10 +219,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
 
-        /* =============================================
-           EMBARALHAMENTO
-        ============================================= */
-
         if (shuffled) {
 
             filtered =
@@ -218,12 +226,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
+
         return filtered;
     }
 
 
     /* =================================================
-       INICIA SIMULADO
+       INICIAR
     ================================================= */
 
     function startQuiz() {
@@ -265,12 +274,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-        /* =============================================
-           MODO DE PROVA
-        ============================================= */
+        /* =================================================
+           MODO
+        ================================================= */
 
         const mode =
             modeSelect.value;
+
 
         if (mode === "simulado20") {
 
@@ -278,6 +288,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 filtered.slice(0, 20);
 
         }
+
 
         if (mode === "simulado40") {
 
@@ -311,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       MOSTRA QUESTÃO
+       MOSTRAR QUESTÃO
     ================================================= */
 
     function renderQuestion() {
@@ -356,7 +367,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 </span>
 
-
                 <span class="difficulty">
 
                     ${escapeHTML(question.difficulty)}
@@ -390,14 +400,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     .map((option, index) => {
 
                         return `
-
                             <div
                                 class="option"
                                 data-index="${index}"
                             >
                                 ${escapeHTML(option)}
                             </div>
-
                         `;
 
                     })
@@ -449,16 +457,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
 
             </div>
-
         `;
 
 
-        /* =============================================
-           EVENTOS DAS ALTERNATIVAS
-        ============================================= */
+        /* =================================================
+           ALTERNATIVAS
+        ================================================= */
 
         const options =
             quiz.querySelectorAll(".option");
+
 
         options.forEach(option => {
 
@@ -470,20 +478,26 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
+
                     options.forEach(item => {
+
                         item.classList.remove(
                             "selected"
                         );
+
                     });
+
 
                     this.classList.add(
                         "selected"
                     );
 
+
                     selectedAnswer =
                         Number(
                             this.dataset.index
                         );
+
 
                     document
                         .getElementById("correctBtn")
@@ -495,9 +509,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
 
-        /* =============================================
+        /* =================================================
            CORRIGIR
-        ============================================= */
+        ================================================= */
 
         document
             .getElementById("correctBtn")
@@ -507,9 +521,9 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-        /* =============================================
+        /* =================================================
            ANTERIOR
-        ============================================= */
+        ================================================= */
 
         document
             .getElementById("prevBtn")
@@ -529,9 +543,9 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
 
-        /* =============================================
+        /* =================================================
            PRÓXIMA
-        ============================================= */
+        ================================================= */
 
         document
             .getElementById("nextBtn")
@@ -549,12 +563,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 }
             );
-
     }
 
 
     /* =================================================
-       CORRIGE QUESTÃO
+       CORRIGIR QUESTÃO
     ================================================= */
 
     function correctQuestion() {
@@ -563,6 +576,7 @@ document.addEventListener("DOMContentLoaded", function () {
             selectedAnswer === null ||
             questionAnswered
         ) {
+
             return;
         }
 
@@ -576,7 +590,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         const correctLetter =
-            question.answer.trim().toUpperCase();
+            String(question.answer)
+                .trim()
+                .toUpperCase();
 
 
         const selectedLetter =
@@ -591,7 +607,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         questionAnswered = true;
-
 
         stats.answered++;
 
@@ -610,9 +625,9 @@ document.addEventListener("DOMContentLoaded", function () {
         updateStats();
 
 
-        /* =============================================
-           MARCA ALTERNATIVAS
-        ============================================= */
+        /* =================================================
+           MARCAR ALTERNATIVAS
+        ================================================= */
 
         const options =
             quiz.querySelectorAll(".option");
@@ -659,9 +674,9 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
 
-        /* =============================================
+        /* =================================================
            FEEDBACK
-        ============================================= */
+        ================================================= */
 
         const feedback =
             document.getElementById(
@@ -676,7 +691,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             feedback.innerHTML = `
 
-                <h3>✓ Resposta correta!</h3>
+                <h3>
+                    ✓ Resposta correta!
+                </h3>
 
                 <p class="explanation">
 
@@ -693,7 +710,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         ? `
                             <p class="explanation">
 
-                                <strong>⚠ Pegadinha:</strong><br>
+                                <strong>
+                                    ⚠ Pegadinha:
+                                </strong><br>
 
                                 ${escapeHTML(
                                     question.trap
@@ -713,11 +732,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
             feedback.innerHTML = `
 
-                <h3>✗ Resposta incorreta</h3>
+                <h3>
+                    ✗ Resposta incorreta
+                </h3>
 
                 <p class="explanation">
 
-                    <strong>Resposta correta:</strong>
+                    <strong>
+                        Resposta correta:
+                    </strong>
+
                     ${escapeHTML(
                         question.answer
                     )}
@@ -727,7 +751,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <p class="explanation">
 
-                    <strong>Explicação:</strong><br>
+                    <strong>
+                        Explicação:
+                    </strong><br>
 
                     ${escapeHTML(
                         question.explanation
@@ -740,7 +766,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         ? `
                             <p class="explanation">
 
-                                <strong>⚠ Pegadinha:</strong><br>
+                                <strong>
+                                    ⚠ Pegadinha:
+                                </strong><br>
 
                                 ${escapeHTML(
                                     question.trap
@@ -756,9 +784,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
-        /* =============================================
-           HABILITA PRÓXIMA
-        ============================================= */
+        /* =================================================
+           BOTÕES
+        ================================================= */
 
         document
             .getElementById("correctBtn")
@@ -768,12 +796,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document
             .getElementById("nextBtn")
             .disabled = false;
-
     }
 
 
     /* =================================================
-       RESULTADO FINAL
+       RESULTADO
     ================================================= */
 
     function showResult() {
@@ -787,7 +814,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 : 0;
 
 
-        let message = "";
+        let message;
 
 
         if (percentage >= 90) {
@@ -830,46 +857,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="resultado-final">
 
                     <p>
-                        <strong>
-                            Questões:
-                        </strong>
-
+                        <strong>Questões:</strong>
                         ${currentQuestions.length}
                     </p>
 
-
                     <p>
-                        <strong>
-                            Respondidas:
-                        </strong>
-
+                        <strong>Respondidas:</strong>
                         ${stats.answered}
                     </p>
 
-
                     <p>
-                        <strong>
-                            Acertos:
-                        </strong>
-
+                        <strong>Acertos:</strong>
                         ${stats.correct}
                     </p>
 
-
                     <p>
-                        <strong>
-                            Erros:
-                        </strong>
-
+                        <strong>Erros:</strong>
                         ${stats.wrong}
                     </p>
 
-
                     <p>
-                        <strong>
-                            Aproveitamento:
-                        </strong>
-
+                        <strong>Aproveitamento:</strong>
                         ${percentage}%
                     </p>
 
@@ -884,7 +892,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
 
             </div>
-
         `;
 
 
@@ -894,7 +901,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 "click",
                 startQuiz
             );
-
     }
 
 
@@ -912,62 +918,37 @@ document.addEventListener("DOMContentLoaded", function () {
                     Banco de Questões
                 </h2>
 
-
                 <p>
                     Prepare-se para o cargo de
                     Analista de Tecnologia da Informação
                     e Comunicação.
                 </p>
 
-
                 <p>
                     Escolha os filtros acima ou clique
                     em "Começar Estudos".
                 </p>
 
-
                 <ul>
 
                     <li>Lógica de Programação</li>
-
                     <li>Estruturas de Dados</li>
-
-                    <li>
-                        Programação Orientada a Objetos
-                    </li>
-
+                    <li>Programação Orientada a Objetos</li>
                     <li>Java</li>
-
                     <li>Dart e Flutter</li>
-
                     <li>Banco de Dados</li>
-
                     <li>SQL</li>
-
                     <li>Desenvolvimento Web</li>
-
                     <li>Spring</li>
-
                     <li>REST e SOAP</li>
-
                     <li>UML</li>
-
                     <li>Arquitetura de Software</li>
-
                     <li>Design Patterns</li>
-
                     <li>DDD</li>
-
                     <li>Scrum e XP</li>
-
                     <li>Testes de Software</li>
-
                     <li>Git</li>
-
-                    <li>
-                        Criptografia e
-                        Certificação Digital
-                    </li>
+                    <li>Criptografia e Certificação Digital</li>
 
                 </ul>
 
@@ -980,7 +961,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </button>
 
             </div>
-
         `;
 
 
@@ -990,25 +970,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 "click",
                 startQuiz
             );
-
     }
 
 
     /* =================================================
        ESCAPAR HTML
-       
-       Evita que códigos das questões
-       sejam interpretados como HTML.
     ================================================= */
 
     function escapeHTML(value) {
 
-        if (value === null ||
-            value === undefined) {
+        if (
+            value === null ||
+            value === undefined
+        ) {
 
             return "";
 
         }
+
 
         return String(value)
             .replace(/&/g, "&amp;")
@@ -1047,17 +1026,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       BOTÃO DA TELA INICIAL
-    ================================================= */
-
-    welcomeStart.addEventListener(
-        "click",
-        startQuiz
-    );
-
-
-    /* =================================================
-       ZERAR ESTATÍSTICAS
+       ZERAR
     ================================================= */
 
     resetBtn.addEventListener(
@@ -1081,69 +1050,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /* =================================================
-       FILTROS ALTERADOS
-    ================================================= */
-
-    areaSelect.addEventListener(
-        "change",
-        function () {
-
-            if (currentQuestions.length === 0) {
-
-                updateStats();
-
-            }
-
-        }
-    );
-
-
-    difficultySelect.addEventListener(
-        "change",
-        function () {
-
-            if (currentQuestions.length === 0) {
-
-                updateStats();
-
-            }
-
-        }
-    );
-
-
-    modeSelect.addEventListener(
-        "change",
-        function () {
-
-            if (currentQuestions.length === 0) {
-
-                updateStats();
-
-            }
-
-        }
-    );
-
-
-    /* =================================================
        INICIALIZAÇÃO
     ================================================= */
 
     loadAreas();
 
 
-    /*
-       Mostra a quantidade total do banco
-       inicialmente.
-    */
+    currentQuestions = [];
+
 
     totalQuestions.textContent =
         questionBank.length;
 
     answered.textContent = "0";
+
     correct.textContent = "0";
+
     wrong.textContent = "0";
+
     accuracy.textContent = "0%";
 
 
