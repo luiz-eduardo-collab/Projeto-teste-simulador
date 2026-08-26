@@ -1,5 +1,5 @@
 
-const questions = [];
+window.questions = [];
 
 let id = 1;
 
