@@ -42,14 +42,22 @@ document.addEventListener("DOMContentLoaded", () => {
         startBtn.addEventListener("click", () => {
             const selectedArea = areaSelect ? areaSelect.value : "Todas";
             const selectedDiff = difficultySelect ? difficultySelect.value : "Todas";
-            const selectedMode = modeSelect ? modeSelect.value : "study";
-
-            // Define o limite com base na opção selecionada no HTML (#modeSelect)
+            
+            // Pega o texto ou o valor selecionado no modo e extrai números (ex: "simulado20" ou "Simulado - 20 questões" vira 20)
             let limiteDesejado = null;
-            if (selectedMode === "simulado20") {
-                limiteDesejado = 20;
-            } else if (selectedMode === "simulado40") {
-                limiteDesejado = 40;
+            if (modeSelect) {
+                const textoModo = modeSelect.options[modeSelect.selectedIndex].text;
+                const valorModo = modeSelect.value;
+                
+                // Tenta achar números no value ou no texto da opção selecionada
+                const matchValor = valorModo.match(/\d+/);
+                const matchTexto = textoModo.match(/\d+/);
+                
+                if (matchValor) {
+                    limiteDesejado = parseInt(matchValor[0]);
+                } else if (matchTexto) {
+                    limiteDesejado = parseInt(matchTexto[0]);
+                }
             }
 
             // Filtra as questões pelo tópico e dificuldade selecionados
@@ -64,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Embaralha e aplica o limite caso seja simulado
+            // Embaralha e aplica o limite se houver um número válido identificado
             filtradas = embaralharArray(filtradas);
-            if (limiteDesejado !== null && filtradas.length > limiteDesejado) {
+            if (limiteDesejado && !isNaN(limiteDesejado) && filtradas.length > limiteDesejado) {
                 filtradas = filtradas.slice(0, limiteDesejado);
             }
 
